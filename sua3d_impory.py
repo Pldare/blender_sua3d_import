@@ -4,7 +4,7 @@ bl_info = {
     "name": "Import Lisomn_Binary Motion (.sua3d,.sua3s)",
     "description": "Import Lisomn_Binary Motion.",
     "author": "Lisomn",
-    "version": (2020, 2, 11),
+    "version": (2020, 4, 8),
     "blender": (2, 7, 9),
     "location": "File > Import > Lisomn_Binary Motion",
     "Lisomn_url": "https://space.bilibili.com/8720154",
@@ -53,65 +53,64 @@ def load_sua3ds(filename,faxis):
     for arm_id in range(0,arm_count):
         arm_name_size=struct.unpack("<I",file.read(4))[0]
         arm_name=str(file.read(arm_name_size),encoding="utf-8")
-        amt = bpy.data.armatures.new(arm_name)
-        obj = bpy.data.objects.new(arm_name + ".amt", amt)
-        bpy.context.scene.objects.link(obj)
+        if arm_name in bpy.data.armatures.keys():
+            amt = bpy.data.armatures[arm_name]
+            print("!!!WARNING:",amt.name,":exist")
+        else:
+            amt = bpy.data.armatures.new(arm_name)
+            
+        if arm_name+".amt" in bpy.data.objects.keys():
+            obj = bpy.data.objects[arm_name+".amt"]
+            print("!!!WARNING:",obj.name,":exist")
+        else:
+            obj = bpy.data.objects.new(arm_name + ".amt", amt)
+            bpy.context.scene.objects.link(obj)
         bpy.context.scene.objects.active = obj
-        
+        max_frame=250
         bone_count=struct.unpack("<I",file.read(4))[0]
         for bone_id in range(0,bone_count):
             bone_name_size = struct.unpack("<I",file.read(4))[0]
             bone_name=str(file.read(bone_name_size),encoding="utf-8")
             parent = struct.unpack("<f",file.read(4))[0]
             print(bone_name,":sua3d bone_name:",parent,":parent")
-            bpy.ops.object.mode_set(mode='EDIT')
-            bone = amt.edit_bones.new(bone_name)
-            bone.tail[2]=1
-            bpy.ops.object.posemode_toggle()
-            obj.pose.bones[bone_name].rotation_mode = 'XYZ'
-            max_frame=250
-            for i in range(0,9):
-                type1_size = struct.unpack("<I",file.read(4))[0]
-                type1 = struct.unpack("<"+str(type1_size)+"s",file.read(type1_size))[0]
-                type2_size = struct.unpack("<I",file.read(4))[0]
-                type2 = struct.unpack("<"+str(type2_size)+"s",file.read(type2_size))[0]
-                motion_type = struct.unpack("<I",file.read(4))[0]
-                print(type1,type2,motion_type)
-                if motion_type != 0:
-                    sindex=0
-                    if motion_type == 1:
-                        #TODO one value
-                        frame_key = struct.unpack("<f",file.read(4))[0]
-                        if type1 == b'Rot':
-                            if type2 == b'X':
-                                obj.pose.bones[bone_name].rotation_euler[0]=frame_key
-                                sindex=0
-                            elif type2 == b'Y':
-                                obj.pose.bones[bone_name].rotation_euler[1]=frame_key
-                                sindex=1
-                            elif type2 == b'Z':
-                                sindex=2
-                                obj.pose.bones[bone_name].rotation_euler[2]=frame_key
-                            obj.keyframe_insert(data_path="rotation_euler",frame=0,index=sindex)
-                        elif type1 == b'Trans':
-                            if type2 == b'X':
-                                obj.pose.bones[bone_name].location[0]=frame_key
-                                sindex=0
-                            elif type2 == b'Y':
-                                obj.pose.bones[bone_name].location[1]=frame_key
-                                sindex=1
-                            elif type2 == b'Z':
-                                obj.pose.bones[bone_name].location[2]=frame_key
-                                sindex=2
-                            obj.pose.bones[bone_name].keyframe_insert(data_path="location",frame=0,index=sindex)
-                    elif motion_type == 2:
-                        motion_count=struct.unpack("<I",file.read(4))[0]
-                        if motion_count > max_frame:
-                            max_frame=motion_count
-                        rel_count=struct.unpack("<I",file.read(4))[0]
-                        for a in range(0,rel_count):
-                            frame_time=struct.unpack("<I",file.read(4))[0]
-                            frame_key=struct.unpack("<f",file.read(4))[0]
+            if bone_name in amt.bones.keys():
+                print("!!!WARNING:",bone_name,":exist in:",amt.name)
+                for i in range(0,9):
+                    type1_size = struct.unpack("<I",file.read(4))[0]
+                    type1 = struct.unpack("<"+str(type1_size)+"s",file.read(type1_size))[0]
+                    type2_size = struct.unpack("<I",file.read(4))[0]
+                    type2 = struct.unpack("<"+str(type2_size)+"s",file.read(type2_size))[0]
+                    motion_type = struct.unpack("<I",file.read(4))[0]
+                    print(type1,type2,motion_type)
+                    if motion_type != 0:
+                        if motion_type == 1:
+                            #TODO one value
+                            frame_key = struct.unpack("<f",file.read(4))[0]
+                        elif motion_type == 2:
+                            motion_count=struct.unpack("<I",file.read(4))[0]
+                            rel_count=struct.unpack("<I",file.read(4))[0]
+                            for a in range(0,rel_count):
+                                frame_time=struct.unpack("<I",file.read(4))[0]
+                                frame_key=struct.unpack("<f",file.read(4))[0]
+            else:
+                bpy.ops.object.mode_set(mode='EDIT')
+                bone = amt.edit_bones.new(bone_name)
+                bone.tail[2]=1
+                bpy.ops.object.posemode_toggle()
+                obj.pose.bones[bone_name].rotation_mode = 'XYZ'
+                
+                for i in range(0,9):
+                    type1_size = struct.unpack("<I",file.read(4))[0]
+                    type1 = struct.unpack("<"+str(type1_size)+"s",file.read(type1_size))[0]
+                    type2_size = struct.unpack("<I",file.read(4))[0]
+                    type2 = struct.unpack("<"+str(type2_size)+"s",file.read(type2_size))[0]
+                    motion_type = struct.unpack("<I",file.read(4))[0]
+                    print(type1,type2,motion_type)
+                    if motion_type != 0:
+                        sindex=0
+                        if motion_type == 1:
+                            #TODO one value
+                            frame_key = struct.unpack("<f",file.read(4))[0]
                             if type1 == b'Rot':
                                 if type2 == b'X':
                                     obj.pose.bones[bone_name].rotation_euler[0]=frame_key
@@ -122,7 +121,7 @@ def load_sua3ds(filename,faxis):
                                 elif type2 == b'Z':
                                     sindex=2
                                     obj.pose.bones[bone_name].rotation_euler[2]=frame_key
-                                obj.pose.bones[bone_name].keyframe_insert(data_path="rotation_euler",frame=frame_time,index=sindex)
+                                obj.keyframe_insert(data_path="rotation_euler",frame=0,index=sindex)
                             elif type1 == b'Trans':
                                 if type2 == b'X':
                                     obj.pose.bones[bone_name].location[0]=frame_key
@@ -133,8 +132,38 @@ def load_sua3ds(filename,faxis):
                                 elif type2 == b'Z':
                                     obj.pose.bones[bone_name].location[2]=frame_key
                                     sindex=2
-                                obj.pose.bones[bone_name].keyframe_insert(data_path="location",frame=frame_time,index=sindex)
-            bpy.ops.object.posemode_toggle()
+                                obj.pose.bones[bone_name].keyframe_insert(data_path="location",frame=0,index=sindex)
+                        elif motion_type == 2:
+                            motion_count=struct.unpack("<I",file.read(4))[0]
+                            if motion_count > max_frame:
+                                max_frame=motion_count
+                            rel_count=struct.unpack("<I",file.read(4))[0]
+                            for a in range(0,rel_count):
+                                frame_time=struct.unpack("<I",file.read(4))[0]
+                                frame_key=struct.unpack("<f",file.read(4))[0]
+                                if type1 == b'Rot':
+                                    if type2 == b'X':
+                                        obj.pose.bones[bone_name].rotation_euler[0]=frame_key
+                                        sindex=0
+                                    elif type2 == b'Y':
+                                        obj.pose.bones[bone_name].rotation_euler[1]=frame_key
+                                        sindex=1
+                                    elif type2 == b'Z':
+                                        sindex=2
+                                        obj.pose.bones[bone_name].rotation_euler[2]=frame_key
+                                    obj.pose.bones[bone_name].keyframe_insert(data_path="rotation_euler",frame=frame_time,index=sindex)
+                                elif type1 == b'Trans':
+                                    if type2 == b'X':
+                                        obj.pose.bones[bone_name].location[0]=frame_key
+                                        sindex=0
+                                    elif type2 == b'Y':
+                                        obj.pose.bones[bone_name].location[1]=frame_key
+                                        sindex=1
+                                    elif type2 == b'Z':
+                                        obj.pose.bones[bone_name].location[2]=frame_key
+                                        sindex=2
+                                    obj.pose.bones[bone_name].keyframe_insert(data_path="location",frame=frame_time,index=sindex)
+                bpy.ops.object.posemode_toggle()
     if max_frame != 250:
         bpy.context.scene.frame_end=max_frame
     bpy.ops.object.editmode_toggle()
