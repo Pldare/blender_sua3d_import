@@ -150,8 +150,8 @@ def load_sua3s(root_dir,file_name):
                 max_frame=import_sua3(root_dir+"/"+sub_name)
                 max_list.append(max_frame)
         else:
-            sub_name=get_str(file).replace("\\","/")
-            max_frame=import_sua3(root_dir+"/"+sub_name)
+            #sub_name=get_str(file).replace("\\","/")
+            max_frame=import_sua3(root_dir+"/"+sub_name1)
             max_list.append(max_frame)
     set_frame_end(max(max_list))
     file_fps=get_float(file)
