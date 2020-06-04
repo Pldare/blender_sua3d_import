@@ -66,7 +66,13 @@ def load_frame(file,bone_name,obj,begin_value):
     use_bone=obj.pose.bones[bone_name]
     if type2 != "Null":
         if type2 == "Value":
-            get_float(file)
+            frame_value=get_float(file)
+            if type1[0] == "ROT":
+                use_bone.rotation_euler[xyz_id]=frame_value
+                use_bone.keyframe_insert(data_path="rotation_euler",frame=begin_value,index=xyz_id)
+            elif type1[0] == "TRANS":
+                use_bone.location[xyz_id]=frame_value
+                use_bone.keyframe_insert(data_path="location",frame=begin_value,index=xyz_id)
             return 1
         else:
             max_count=get_long(file)
