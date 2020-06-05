@@ -90,10 +90,17 @@ def load_frame(file,bone_name,obj,begin_value):
     else:
         return 0
                 
+def sub_max(arry):
+    t=0
+    for i in arry:
+        if i != None:
+            if i < t:
+                i=t
+    return t
 
 def load_sua3o(file_name):
     file=open(file_name,"rb")
-    print(file_name)
+    #print(file_name)
     arm_name=get_str(file).split("|")[-1]
     amt=make_amt(arm_name)
     obj=make_obj(amt,arm_name)
@@ -116,7 +123,7 @@ def load_sua3o(file_name):
     
 def load_sua3b(file_name):
     file=open(file_name,"rb")
-    print(file_name)
+    #print(file_name)
     arm_name=get_str(file)
     amt=make_amt(arm_name)
     obj=make_obj(amt,arm_name)
@@ -146,8 +153,10 @@ def load_sua3s(root_dir,file_name):
     file_begin=get_float(file)
     file_count=get_long(file)
     max_list=[]
+    print("root_dir:",root_dir)
     for i in range(0,file_count):
         sub_name1=get_str(file)
+        print(sub_name1.replace("\\","/"))
         sub_name=""
         if sub_name1 == "bone_anim":
             block_count=get_long(file)
@@ -159,7 +168,8 @@ def load_sua3s(root_dir,file_name):
             #sub_name=get_str(file).replace("\\","/")
             max_frame=import_sua3(root_dir+"/"+sub_name1)
             max_list.append(max_frame)
-    set_frame_end(max(max_list))
+    print(max_list)
+    set_frame_end(sub_max(max_list))
     file_fps=get_float(file)
     set_frame_fps(file_fps)
     
