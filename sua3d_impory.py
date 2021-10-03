@@ -55,6 +55,7 @@ def set_frame_end(key):
     #bpy.context.scene.render.fps = 60
     #bpy.context.scene.render.fps_base = 1
 def set_frame_fps(key):
+    print("fps")
     bpy.context.scene.render.fps = key
     bpy.context.scene.render.fps_base = 1
 
@@ -151,23 +152,27 @@ def load_sua3b(file_name):
 def load_sua3s(root_dir,file_name):
     file=open(file_name,"rb")
     file_begin=get_float(file)
-    file_count=get_long(file)
+    #object_data size
+    count1=get_long(file)
     max_list=[]
-    print("root_dir:",root_dir)
-    for i in range(0,file_count):
-        sub_name1=get_str(file)
-        print(sub_name1.replace("\\","/"))
-        sub_name=""
-        if sub_name1 == "bone_anim":
-            block_count=get_long(file)
-            for a in range(0,block_count):
-                sub_name=get_str(file).replace("\\","/")
-                max_frame=import_sua3(root_dir+"/"+sub_name)
+    for j in range(0,count1):
+        file_count=get_long(file)
+        print([file_begin,file_count])
+        print("root_dir:",root_dir)
+        for i in range(0,file_count):
+            sub_name1=get_str(file)
+            print("sub:"+sub_name1.replace("\\","/"))
+            sub_name=""
+            if sub_name1 == "bone_anim":
+                block_count=get_long(file)
+                for a in range(0,block_count):
+                    sub_name=get_str(file).replace("\\","/")
+                    max_frame=import_sua3(root_dir+"/"+sub_name)
+                    max_list.append(max_frame)
+            else:
+                #sub_name=get_str(file).replace("\\","/")
+                max_frame=import_sua3(root_dir+"/"+sub_name1)
                 max_list.append(max_frame)
-        else:
-            #sub_name=get_str(file).replace("\\","/")
-            max_frame=import_sua3(root_dir+"/"+sub_name1)
-            max_list.append(max_frame)
     print(max_list)
     set_frame_end(sub_max(max_list))
     file_fps=get_float(file)
